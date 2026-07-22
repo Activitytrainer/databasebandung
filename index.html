@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Database Management Bandung</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js & ChartJS DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11.5px;
+        }
+
+        /* Pulse Heartbeat Hover Animation for Menu Items */
+        @keyframes softPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); }
+            100% { transform: scale(1); }
+        }
+
+        .hover-pulse {
+            transition: all 0.2s ease-in-out;
+        }
+        .hover-pulse:hover {
+            animation: softPulse 1s infinite ease-in-out;
+        }
+
+        /* Soft & Thin Gradient Header */
+        .header-soft-gradient {
+            background: linear-gradient(90deg, #4f46e5 0%, #6366f1 50%, #3b82f6 100%);
+        }
+
+        .card-soft {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+            border-radius: 10px;
+        }
+
+        /* Compact Table custom styling */
+        th {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 6px 8px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 6px 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .badge-active {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            padding: 1px 6px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 9.5px;
+        }
+
+        .badge-inactive {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            padding: 1px 6px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 9.5px;
+        }
+
+        .badge-pos {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 9.5px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-xs w-full mx-4 border border-slate-100">
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-600">
+                    <i class="fa-solid fa-user-gear text-xl"></i>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Sales System</h2>
+                <p class="text-xs text-slate-400">Masukan kata sandi sistem</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
+                <div>
+                    <input type="password" id="loginPassword" required placeholder="Password..." 
+                        class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <p class="text-[10px] text-slate-400 mt-1">Gunakan password: <span class="font-bold">bandung</span></p>
+                </div>
+                
+                <div id="loginError" class="hidden text-[10px] text-rose-500 bg-rose-50 p-2 rounded text-center">
+                    Password salah.
+                </div>
+
+                <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs hover-pulse shadow-sm">
+                    Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="mainApp" class="hidden flex-col min-h-screen">
+        
+        <!-- THIN SOFT GRADIENT HEADER -->
+        <header class="header-soft-gradient text-white shadow-sm sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4">
+                <div class="flex items-center justify-between h-12">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie text-cyan-200 text-base"></i>
+                        <h1 class="font-bold text-sm tracking-tight">Sales Database Management Bandung</h1>
+                        <span class="text-[10px] text-indigo-200 border-l border-indigo-400/40 pl-2 ml-2" id="liveClock">22 Jul 2026 01:58 WIB</span>
+                    </div>
+
+                    <!-- Compact Actions Navbar -->
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="openUploadModal()" class="hover-pulse bg-white/10 hover:bg-white/20 text-white text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel text-emerald-300"></i> Upload
+                        </button>
+
+                        <button onclick="exportToExcel()" class="hover-pulse bg-white/10 hover:bg-white/20 text-white text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-download text-amber-300"></i> Excel
+                        </button>
+
+                        <button onclick="exportToPDF()" class="hover-pulse bg-white/10 hover:bg-white/20 text-white text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-file-pdf text-rose-300"></i> PDF
+                        </button>
+
+                        <button onclick="openAddModal()" class="hover-pulse bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Tambah
+                        </button>
+
+                        <button onclick="toggleLogModal()" class="hover-pulse bg-white/10 hover:bg-white/20 text-white text-[11px] px-2 py-1 rounded-md">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </button>
+
+                        <button onclick="logout()" class="hover-pulse bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] px-2 py-1 rounded-md">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-4 py-3 space-y-3">
+
+            <!-- 1. HEADCOUNT METRICS (DI ATAS GRAFIK & LEBIH BESAR) -->
+            <section class="card-soft p-3 bg-gradient-to-r from-slate-50 to-indigo-50/30">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-xs text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-users text-indigo-600"></i> MANPOWER HEADCOUNT SUMMARY
+                    </span>
+                    <span class="text-[10px] text-slate-400">Update Terakhir Otomatis</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                    <!-- Headcount Utama (Lebih Besar) -->
+                    <div class="card-soft p-2.5 text-center border-l-4 border-l-indigo-600 bg-white shadow-sm col-span-2 sm:col-span-1">
+                        <p class="text-[9.5px] uppercase font-bold text-slate-400">Total Head Count</p>
+                        <p class="text-2xl font-black text-indigo-600 mt-0.5" id="metricTotal">0</p>
+                        <p class="text-[9px] text-slate-400">Personel</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-emerald-500 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-emerald-600">Active</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricActive">0</p>
+                        <p class="text-[8.5px] text-emerald-600">Aktif</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-rose-500 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-rose-500">Not Active</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricNotActive">0</p>
+                        <p class="text-[8.5px] text-rose-500">Non Aktif</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-amber-400 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-amber-600">New Hire</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricNewHire">0</p>
+                        <p class="text-[8.5px] text-slate-400">Baru</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-sky-400 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-sky-600">AE OJT</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricAeOjt">0</p>
+                        <p class="text-[8.5px] text-slate-400">Training</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-blue-500 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-blue-600">AE PRO</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricAePro">0</p>
+                        <p class="text-[8.5px] text-slate-400">Pro</p>
+                    </div>
+
+                    <div class="card-soft p-2 text-center border-l-3 border-l-purple-500 bg-white">
+                        <p class="text-[9px] uppercase font-bold text-purple-600">AE ELITE</p>
+                        <p class="text-lg font-bold text-slate-800" id="metricAeElite">0</p>
+                        <p class="text-[8.5px] text-slate-400">Elite</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. CHARTS SECTION (GRAFIK DIPISAH & ACTIVE/NON-ACTIVE DIHAPUS DARI POSITION CHART) -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Chart 1: Current Status Breakdown -->
+                <div class="card-soft p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="font-bold text-[11px] text-slate-700 uppercase">Status Active vs Non-Active</h3>
+                        <span class="text-[9px] text-slate-400">Status</span>
+                    </div>
+                    <div class="relative h-36 w-full flex items-center justify-center">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Sebaran Position Active (HANYA NEW HIRE, OJT, PRO, ELITE) -->
+                <div class="card-soft p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="font-bold text-[11px] text-slate-700 uppercase">Sebaran Position Active</h3>
+                        <span class="text-[9px] text-slate-400">4 Kategori</span>
+                    </div>
+                    <div class="relative h-36 w-full">
+                        <canvas id="chartPosition"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: City Breakdown -->
+                <div class="card-soft p-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="font-bold text-[11px] text-slate-700 uppercase">Sebaran Per Kota</h3>
+                        <span class="text-[9px] text-slate-400">Area Jawa Barat</span>
+                    </div>
+                    <div class="relative h-36 w-full">
+                        <canvas id="chartCity"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. CASCADING TOP FILTERS -->
+            <section class="card-soft p-3">
+                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                    <span class="font-bold text-[11px] text-slate-700 uppercase"><i class="fa-solid fa-filter text-indigo-500 mr-1"></i> Filter Hirarki Data</span>
+                    <button onclick="resetFilters()" class="text-[10px] text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filter
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <div>
+                        <label class="block text-[9.5px] font-semibold text-slate-500 mb-0.5">1. TS NAME</label>
+                        <select id="filterTS" onchange="onTSChange()" class="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Semua TS --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9.5px] font-semibold text-slate-500 mb-0.5">2. SPV NAME</label>
+                        <select id="filterSPV" onchange="applyFilters()" class="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Semua SPV --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9.5px] font-semibold text-slate-500 mb-0.5">3. KOTA / CITY</label>
+                        <select id="filterCity" onchange="applyFilters()" class="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Semua Kota --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9.5px] font-semibold text-slate-500 mb-0.5">4. POSITION ACTIVE</label>
+                        <select id="filterPosition" onchange="applyFilters()" class="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Semua Posisi --</option>
+                            <option value="NEW HIRE">NEW HIRE</option>
+                            <option value="AE OJT">AE OJT</option>
+                            <option value="AE PRO">AE PRO</option>
+                            <option value="AE ELITE">AE ELITE</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9.5px] font-semibold text-slate-500 mb-0.5">5. CURRENT STATUS</label>
+                        <select id="filterStatus" onchange="applyFilters()" class="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">-- Semua Status --</option>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="NOT ACTIVE">NOT ACTIVE</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. SALES PERSONNEL DATABASE TABLE SECTION -->
+            <section class="card-soft p-3 space-y-2">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-database text-indigo-500 text-sm"></i>
+                        <h2 class="font-bold text-slate-800 text-xs">Sales Personnel Database</h2>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 text-[11px] text-slate-500">
+                        <span>Tampilkan: 
+                            <select id="pageSize" onchange="changePageSize(this.value)" class="border rounded p-0.5 text-[10.5px]">
+                                <option value="20" selected>20 per halaman</option>
+                                <option value="50">50 per halaman</option>
+                                <option value="100">100 per halaman</option>
+                            </select>
+                        </span>
+                        <span>Total Filtered: <strong id="filterCountText" class="text-indigo-600 font-bold">0</strong> dari <span id="totalCountText">0</span></span>
+                    </div>
+                </div>
+
+                <!-- TABLE WRAPPER -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="w-full text-left border-collapse" id="salesTable">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Avatar</th>
+                                <th>Sales Code</th>
+                                <th>Sales Name</th>
+                                <th>SPV Name</th>
+                                <th>TS Name</th>
+                                <th>HOS Name</th>
+                                <th>MOB</th>
+                                <th>Tenure</th>
+                                <th class="text-center bg-indigo-50/60">Current Status</th>
+                                <th>City</th>
+                                <th>Region</th>
+                                <th class="text-center bg-slate-200/50">Position Active</th>
+                                <th>Footprint</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                            <!-- Column Inline Search Filters -->
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <td class="p-1"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(0, this.value)" placeholder="Code..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(1, this.value)" placeholder="Nama..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(2, this.value)" placeholder="SPV..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(3, this.value)" placeholder="TS..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(4, this.value)" placeholder="HOS..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(5, this.value)" placeholder="MOB..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(6, this.value)" placeholder="Tenure..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(7, this.value)" placeholder="Status..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(8, this.value)" placeholder="Kota..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(9, this.value)" placeholder="Region..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(10, this.value)" placeholder="Posisi..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"><input type="text" onkeyup="filterColumn(11, this.value)" placeholder="Footprint..." class="w-full text-[10px] p-1 border rounded bg-white"></td>
+                                <td class="p-1"></td>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINATION NEXT WITH ANGKA (1, 2, 3...) -->
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <p class="text-[10.5px] text-slate-400">Halaman <span id="currentPageNum" class="font-bold text-slate-700">1</span> dari <span id="totalPagesNum">1</span></p>
+                    <div class="flex items-center space-x-1" id="paginationControls">
+                        <!-- Numeric buttons rendered via JS -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-white border-t border-slate-200 py-2.5 text-center text-[11px] text-slate-400 mt-auto">
+            © 2026 Sales Database Management Bandung — Area Jawa Barat. All rights reserved.
+        </footer>
+    </div>
+
+    <!-- MODAL UPLOAD EXCEL -->
+    <div id="uploadModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-5 max-w-md w-full mx-4 shadow-xl border border-slate-100">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Upload Excel Database
+                </h3>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="py-3 space-y-3">
+                <p class="text-[11px] text-slate-500">
+                    Sistem mendeteksi kolom otomatis secara menyempurnakan data Excel:
+                    <br><span class="font-mono text-[9.5px] text-indigo-600">SALES_CODE, SALES_NAME, SPV_NAME, TS_NAME, HOS_NAME, MOB, TENURE, CURRENT STATUS, CITY, REGION, POSITION ACTIVE, FOOTPRINT</span>
+                </p>
+
+                <div class="border-2 border-dashed border-slate-200 rounded-lg p-5 text-center bg-slate-50 hover:bg-indigo-50/30 transition cursor-pointer" onclick="document.getElementById('excelFileInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-indigo-500 mb-1"></i>
+                    <p class="text-xs font-semibold text-slate-700">Pilih File Excel (.xlsx / .csv)</p>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="processExcelFile(event)">
+                </div>
+
+                <div id="uploadProgress" class="hidden space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-600 font-medium">
+                        <span id="uploadStatusText">Proses data...</span>
+                        <span id="uploadPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div id="uploadBar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-100">
+                <button onclick="closeUploadModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg font-medium transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADD / EDIT -->
+    <div id="salesModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm overflow-y-auto py-6">
+        <div class="bg-white rounded-xl p-5 max-w-xl w-full mx-4 shadow-xl border border-slate-100 my-auto">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5" id="modalFormTitle">
+                    <i class="fa-solid fa-user-plus text-indigo-600"></i> Form Data Sales
+                </h3>
+                <button onclick="closeSalesModal()" class="text-slate-400 hover:text-slate-600 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="salesForm" onsubmit="saveSalesRecord(event)" class="py-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">SALES_CODE *</label>
+                    <input type="text" id="inputSalesCode" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">SALES_NAME *</label>
+                    <input type="text" id="inputSalesName" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">SPV_NAME *</label>
+                    <input type="text" id="inputSpvName" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">TS_NAME *</label>
+                    <input type="text" id="inputTsName" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">HOS_NAME</label>
+                    <input type="text" id="inputHosName" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">MOB</label>
+                    <input type="text" id="inputMob" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">TENURE</label>
+                    <input type="text" id="inputTenure" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">CURRENT STATUS *</label>
+                    <select id="inputCurrentStatus" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="NOT ACTIVE">NOT ACTIVE</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">CITY (KOTA) *</label>
+                    <input type="text" id="inputCity" required placeholder="BANDUNG" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">REGION</label>
+                    <input type="text" id="inputRegion" value="JAWA BARAT" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">POSITION ACTIVE *</label>
+                    <select id="inputPositionActive" required class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                        <option value="NEW HIRE">NEW HIRE</option>
+                        <option value="AE OJT">AE OJT</option>
+                        <option value="AE PRO">AE PRO</option>
+                        <option value="AE ELITE">AE ELITE</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-0.5">FOOTPRINT</label>
+                    <input type="text" id="inputFootprint" class="w-full p-1.5 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div class="col-span-1 sm:col-span-2 flex justify-end space-x-2 pt-2 border-t border-slate-100 mt-1">
+                    <button type="button" onclick="closeSalesModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition hover-pulse">
+                        Simpan Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOG DRAWER -->
+    <div id="logModal" class="fixed inset-0 z-50 hidden flex items-center justify-end bg-slate-900/40 backdrop-blur-sm">
+        <div class="bg-white h-full w-full max-w-sm p-4 shadow-xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+                    <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Log Aktivitas Sistem
+                    </h3>
+                    <button onclick="toggleLogModal()" class="text-slate-400 hover:text-slate-600 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="activityLogList" class="space-y-2 max-h-[80vh] overflow-y-auto">
+                    <!-- Logs -->
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+                <button onclick="clearActivityLogs()" class="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs font-medium">
+                    Bersihkan Log
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Register ChartJS DataLabels Plugin globally
+        Chart.register(ChartDataLabels);
+
+        // Initial Database Sample Data
+        let salesDatabase = [
+            { SALES_CODE: "BDG-101", SALES_NAME: "Asep Sunandar", SPV_NAME: "Dedi Mulyadi", TS_NAME: "Ahmad Heryawan", HOS_NAME: "Bambang Soesatyo", MOB: "12 Bln", TENURE: "2 Tahun", "CURRENT STATUS": "ACTIVE", CITY: "BANDUNG", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE ELITE", FOOTPRINT: "Bandung Kota" },
+            { SALES_CODE: "BDG-102", SALES_NAME: "Rina Sukmawati", SPV_NAME: "Dedi Mulyadi", TS_NAME: "Ahmad Heryawan", HOS_NAME: "Bambang Soesatyo", MOB: "6 Bln", TENURE: "1 Tahun", "CURRENT STATUS": "ACTIVE", CITY: "BANDUNG", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE PRO", FOOTPRINT: "Bandung Barat" },
+            { SALES_CODE: "BDG-103", SALES_NAME: "Cecep Hendra", SPV_NAME: "Dedi Mulyadi", TS_NAME: "Ahmad Heryawan", HOS_NAME: "Bambang Soesatyo", MOB: "2 Bln", TENURE: "2 Bulan", "CURRENT STATUS": "ACTIVE", CITY: "BANDUNG", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE OJT", FOOTPRINT: "Cimahi" },
+            { SALES_CODE: "CIM-201", SALES_NAME: "Fitri Ani", SPV_NAME: "Eko Purwanto", TS_NAME: "Ahmad Heryawan", HOS_NAME: "Bambang Soesatyo", MOB: "1 Bln", TENURE: "1 Bulan", "CURRENT STATUS": "ACTIVE", CITY: "CIMAHI", REGION: "JAWA BARAT", "POSITION ACTIVE": "NEW HIRE", FOOTPRINT: "Cimahi Utara" },
+            { SALES_CODE: "BGR-301", SALES_NAME: "Budi Santoso", SPV_NAME: "Ginanjar Rahayu", TS_NAME: "Ridwan Kamil", HOS_NAME: "Bambang Soesatyo", MOB: "18 Bln", TENURE: "3 Tahun", "CURRENT STATUS": "ACTIVE", CITY: "BOGOR", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE ELITE", FOOTPRINT: "Bogor Kota" },
+            { SALES_CODE: "BGR-302", SALES_NAME: "Siti Rahmawati", SPV_NAME: "Ginanjar Rahayu", TS_NAME: "Ridwan Kamil", HOS_NAME: "Bambang Soesatyo", MOB: "8 Bln", TENURE: "1 Tahun", "CURRENT STATUS": "NOT ACTIVE", CITY: "BOGOR", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE PRO", FOOTPRINT: "Cibinong" },
+            { SALES_CODE: "BKS-401", SALES_NAME: "Agus Pratama", SPV_NAME: "Hendra Wijaya", TS_NAME: "Ridwan Kamil", HOS_NAME: "Bambang Soesatyo", MOB: "14 Bln", TENURE: "2 Tahun", "CURRENT STATUS": "ACTIVE", CITY: "BEKASI", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE PRO", FOOTPRINT: "Bekasi Barat" },
+            { SALES_CODE: "CRB-501", SALES_NAME: "Dewi Lestari", SPV_NAME: "Irfan Hakim", TS_NAME: "Uu Ruzhanul", HOS_NAME: "Bambang Soesatyo", MOB: "4 Bln", TENURE: "4 Bulan", "CURRENT STATUS": "ACTIVE", CITY: "CIREBON", REGION: "JAWA BARAT", "POSITION ACTIVE": "AE OJT", FOOTPRINT: "Cirebon Kota" },
+            { SALES_CODE: "SKB-601", SALES_NAME: "Fajar Nugraha", SPV_NAME: "Irfan Hakim", TS_NAME: "Uu Ruzhanul", HOS_NAME: "Bambang Soesatyo", MOB: "1 Bln", TENURE: "1 Bulan", "CURRENT STATUS": "ACTIVE", CITY: "SUKABUMI", REGION: "JAWA BARAT", "POSITION ACTIVE": "NEW HIRE", FOOTPRINT: "Sukabumi" },
+            { SALES_CODE: "TSM-701", SALES_NAME: "Gilang Ramadhan", SPV_NAME: "Jaka Tarub", TS_NAME: "Uu Ruzhanul", HOS_NAME: "Bambang Soesatyo", MOB: "0 Bln", TENURE: "0 Bulan", "CURRENT STATUS": "NOT ACTIVE", CITY: "TASIKMALAYA", REGION: "JAWA BARAT", "POSITION ACTIVE": "NEW HIRE", FOOTPRINT: "Tasikmalaya Kota" }
+        ];
+
+        let filteredData = [...salesDatabase];
+        let columnFilterValues = {};
+        let activityLogs = [];
+
+        // Pagination State
+        let currentPage = 1;
+        let pageSize = 20;
+
+        // Global Chart instances
+        let chartStatusInstance = null;
+        let chartPositionInstance = null;
+        let chartCityInstance = null;
+
+        function updateLiveClock() {
+            const now = new Date();
+            const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('liveClock').textContent = now.toLocaleDateString('id-ID', options) + ' WIB';
+        }
+        setInterval(updateLiveClock, 1000);
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('loginPassword').value;
+            if (pass === 'bandung') {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('flex');
+                initApp();
+                addLog("Login sukses ke sistem Sales Database Management Bandung");
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('flex');
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        function initApp() {
+            updateLiveClock();
+            populateFilterDropdowns();
+            applyFilters();
+            initCharts();
+        }
+
+        function addLog(message) {
+            const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            activityLogs.unshift({ time, message });
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('activityLogList');
+            if (activityLogs.length === 0) {
+                container.innerHTML = '<p class="text-[11px] text-slate-400 italic">Belum ada riwayat aktivitas.</p>';
+                return;
+            }
+            container.innerHTML = activityLogs.map(log => `
+                <div class="p-2 bg-slate-50 border border-slate-100 rounded text-[11px]">
+                    <span class="text-slate-400 font-mono text-[9px] block">${log.time}</span>
+                    <p class="text-slate-700 font-medium">${log.message}</p>
+                </div>
+            `).join('');
+        }
+
+        function toggleLogModal() {
+            document.getElementById('logModal').classList.toggle('hidden');
+        }
+
+        function clearActivityLogs() {
+            activityLogs = [];
+            renderLogs();
+        }
+
+        function populateFilterDropdowns() {
+            const tsSelect = document.getElementById('filterTS');
+            const citySelect = document.getElementById('filterCity');
+
+            const uniqueTS = [...new Set(salesDatabase.map(item => item.TS_NAME).filter(Boolean))].sort();
+            tsSelect.innerHTML = '<option value="">-- Semua TS --</option>' + 
+                uniqueTS.map(ts => `<option value="${ts}">${ts}</option>`).join('');
+
+            const uniqueCities = [...new Set(salesDatabase.map(item => item.CITY).filter(Boolean))].sort();
+            citySelect.innerHTML = '<option value="">-- Semua Kota --</option>' + 
+                uniqueCities.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            updateSPVOptions();
+        }
+
+        function onTSChange() {
+            updateSPVOptions();
+            applyFilters();
+        }
+
+        function updateSPVOptions() {
+            const selectedTS = document.getElementById('filterTS').value;
+            const spvSelect = document.getElementById('filterSPV');
+
+            let relevantData = salesDatabase;
+            if (selectedTS) {
+                relevantData = salesDatabase.filter(item => item.TS_NAME === selectedTS);
+            }
+
+            const uniqueSPV = [...new Set(relevantData.map(item => item.SPV_NAME).filter(Boolean))].sort();
+            const currentSPVVal = spvSelect.value;
+
+            spvSelect.innerHTML = '<option value="">-- Semua SPV --</option>' + 
+                uniqueSPV.map(spv => `<option value="${spv}">${spv}</option>`).join('');
+
+            if (uniqueSPV.includes(currentSPVVal)) {
+                spvSelect.value = currentSPVVal;
+            } else {
+                spvSelect.value = "";
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('filterTS').value = "";
+            document.getElementById('filterSPV').value = "";
+            document.getElementById('filterCity').value = "";
+            document.getElementById('filterPosition').value = "";
+            document.getElementById('filterStatus').value = "";
+            columnFilterValues = {};
+            
+            const inputs = document.querySelectorAll('#salesTable tr:nth-child(2) input');
+            inputs.forEach(input => input.value = '');
+
+            updateSPVOptions();
+            applyFilters();
+            addLog("Mereset seluruh filter data.");
+        }
+
+        function applyFilters() {
+            const selectedTS = document.getElementById('filterTS').value;
+            const selectedSPV = document.getElementById('filterSPV').value;
+            const selectedCity = document.getElementById('filterCity').value;
+            const selectedPosition = document.getElementById('filterPosition').value;
+            const selectedStatus = document.getElementById('filterStatus').value;
+
+            filteredData = salesDatabase.filter(item => {
+                if (selectedTS && item.TS_NAME !== selectedTS) return false;
+                if (selectedSPV && item.SPV_NAME !== selectedSPV) return false;
+                if (selectedCity && item.CITY !== selectedCity) return false;
+                if (selectedPosition && item["POSITION ACTIVE"] !== selectedPosition) return false;
+                if (selectedStatus && item["CURRENT STATUS"] !== selectedStatus) return false;
+
+                for (let colKey in columnFilterValues) {
+                    const searchVal = columnFilterValues[colKey].toLowerCase();
+                    if (!searchVal) continue;
+                    let targetVal = "";
+                    switch (parseInt(colKey)) {
+                        case 0: targetVal = item.SALES_CODE || ""; break;
+                        case 1: targetVal = item.SALES_NAME || ""; break;
+                        case 2: targetVal = item.SPV_NAME || ""; break;
+                        case 3: targetVal = item.TS_NAME || ""; break;
+                        case 4: targetVal = item.HOS_NAME || ""; break;
+                        case 5: targetVal = item.MOB || ""; break;
+                        case 6: targetVal = item.TENURE || ""; break;
+                        case 7: targetVal = item["CURRENT STATUS"] || ""; break;
+                        case 8: targetVal = item.CITY || ""; break;
+                        case 9: targetVal = item.REGION || ""; break;
+                        case 10: targetVal = item["POSITION ACTIVE"] || ""; break;
+                        case 11: targetVal = item.FOOTPRINT || ""; break;
+                    }
+                    if (!targetVal.toString().toLowerCase().includes(searchVal)) return false;
+                }
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
+            updateMetrics();
+            updateCharts();
+        }
+
+        function filterColumn(colIdx, val) {
+            columnFilterValues[colIdx] = val;
+            applyFilters();
+        }
+
+        function changePageSize(val) {
+            pageSize = parseInt(val);
+            currentPage = 1;
+            renderTable();
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        // RENDER TABLE WITH PAGINATION & AVATAR
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('filterCountText').textContent = filteredData.length;
+            document.getElementById('totalCountText').textContent = salesDatabase.length;
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="14" class="text-center py-6 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-xl mb-1 block text-slate-300"></i>
+                            Data sales tidak ditemukan.
+                        </td>
+                    </tr>`;
+                renderPagination(0);
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            const startIdx = (currentPage - 1) * pageSize;
+            const endIdx = startIdx + pageSize;
+            const pageData = filteredData.slice(startIdx, endIdx);
+
+            tbody.innerHTML = pageData.map((item) => {
+                const originalIndex = salesDatabase.indexOf(item);
+
+                const statusBadge = item["CURRENT STATUS"] === "ACTIVE" 
+                    ? `<span class="badge-active"><i class="fa-solid fa-circle-check mr-1"></i>ACTIVE</span>`
+                    : `<span class="badge-inactive"><i class="fa-solid fa-circle-xmark mr-1"></i>NOT ACTIVE</span>`;
+
+                // Generate visual avatar filter/picture based on initials
+                const initials = item.SALES_NAME ? item.SALES_NAME.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'SA';
+
+                return `
+                    <tr>
+                        <td class="text-center">
+                            <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 font-bold text-[9px] flex items-center justify-center mx-auto border border-indigo-200" title="Foto/Avatar ${escapeHtml(item.SALES_NAME)}">
+                                ${initials}
+                            </div>
+                        </td>
+                        <td class="font-mono text-[10.5px] font-semibold text-slate-700">${escapeHtml(item.SALES_CODE)}</td>
+                        <td class="font-semibold text-slate-800">${escapeHtml(item.SALES_NAME)}</td>
+                        <td class="text-slate-600">${escapeHtml(item.SPV_NAME)}</td>
+                        <td class="text-slate-600 font-medium">${escapeHtml(item.TS_NAME)}</td>
+                        <td class="text-slate-500">${escapeHtml(item.HOS_NAME || '-')}</td>
+                        <td class="text-slate-500 font-mono text-[10px]">${escapeHtml(item.MOB || '-')}</td>
+                        <td class="text-slate-500 font-mono text-[10px]">${escapeHtml(item.TENURE || '-')}</td>
+                        <td class="text-center">${statusBadge}</td>
+                        <td class="font-medium text-slate-700">${escapeHtml(item.CITY)}</td>
+                        <td class="text-slate-500">${escapeHtml(item.REGION || 'JAWA BARAT')}</td>
+                        <td class="text-center"><span class="badge-pos">${escapeHtml(item["POSITION ACTIVE"])}</span></td>
+                        <td class="text-slate-500">${escapeHtml(item.FOOTPRINT || '-')}</td>
+                        <td class="text-center">
+                            <div class="flex items-center justify-center space-x-1">
+                                <button onclick="openEditModal(${originalIndex})" class="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition" title="Edit Data">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteRecord(${originalIndex})" class="p-1 text-rose-600 hover:bg-rose-50 rounded transition" title="Hapus Data">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderPagination(totalPages);
+        }
+
+        // RENDER PAGINATION BUTTONS (NEXT WITH NUMBERS 1, 2, 3...)
+        function renderPagination(totalPages) {
+            document.getElementById('currentPageNum').textContent = totalPages === 0 ? 0 : currentPage;
+            document.getElementById('totalPagesNum').textContent = totalPages;
+
+            const container = document.getElementById('paginationControls');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let buttonsHTML = '';
+            
+            // Previous button
+            buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-2 py-0.5 text-[10px] border rounded bg-white hover:bg-slate-50 text-slate-600">Prev</button>`;
+
+            // Page Numbers (1, 2, 3...)
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    buttonsHTML += `<button class="px-2 py-0.5 text-[10px] border rounded bg-indigo-600 text-white font-bold">${i}</button>`;
+                } else {
+                    buttonsHTML += `<button onclick="goToPage(${i})" class="px-2 py-0.5 text-[10px] border rounded bg-white hover:bg-slate-50 text-slate-600">${i}</button>`;
+                }
+            }
+
+            // Next button
+            buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-2 py-0.5 text-[10px] border rounded bg-white hover:bg-slate-50 text-slate-600">Next</button>`;
+
+            container.innerHTML = buttonsHTML;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function updateMetrics() {
+            const total = filteredData.length;
+            const active = filteredData.filter(d => d["CURRENT STATUS"] === "ACTIVE").length;
+            const notActive = filteredData.filter(d => d["CURRENT STATUS"] === "NOT ACTIVE").length;
+            const newHire = filteredData.filter(d => d["POSITION ACTIVE"] === "NEW HIRE").length;
+            const aeOjt = filteredData.filter(d => d["POSITION ACTIVE"] === "AE OJT").length;
+            const aePro = filteredData.filter(d => d["POSITION ACTIVE"] === "AE PRO").length;
+            const aeElite = filteredData.filter(d => d["POSITION ACTIVE"] === "AE ELITE").length;
+
+            document.getElementById('metricTotal').textContent = total;
+            document.getElementById('metricActive').textContent = active;
+            document.getElementById('metricNotActive').textContent = notActive;
+            document.getElementById('metricNewHire').textContent = newHire;
+            document.getElementById('metricAeOjt').textContent = aeOjt;
+            document.getElementById('metricAePro').textContent = aePro;
+            document.getElementById('metricAeElite').textContent = aeElite;
+        }
+
+        // CHARTS INITIALIZATION WITH AUTOMATIC NUMERIC LABELS IN/ABOVE BARS
+        function initCharts() {
+            // Chart 1: Current Status
+            const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+            chartStatusInstance = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ACTIVE', 'NOT ACTIVE'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 10 } },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (value) => value > 0 ? value : ''
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Chart 2: Position Active (ACTIVE & NOT ACTIVE DIHAPUS - HANYA 4 POSITION KATEGORI)
+            const ctxPos = document.getElementById('chartPosition').getContext('2d');
+            chartPositionInstance = new Chart(ctxPos, {
+                type: 'bar',
+                data: {
+                    labels: ['NEW HIRE', 'AE OJT', 'AE PRO', 'AE ELITE'],
+                    datasets: [{
+                        label: 'Jumlah',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#f59e0b', '#38bdf8', '#3b82f6', '#a855f7'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#475569',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (value) => value
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 8 } } },
+                        x: { ticks: { font: { size: 8 } } }
+                    }
+                }
+            });
+
+            // Chart 3: City Breakdown
+            const ctxCity = document.getElementById('chartCity').getContext('2d');
+            chartCityInstance = new Chart(ctxCity, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Personel',
+                        data: [],
+                        backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#475569',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (value) => value
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 8 } } },
+                        x: { ticks: { font: { size: 8 } } }
+                    }
+                }
+            });
+
+            updateCharts();
+        }
+
+        function updateCharts() {
+            if (!chartStatusInstance) return;
+
+            // Update Status Chart
+            const activeCount = filteredData.filter(d => d["CURRENT STATUS"] === "ACTIVE").length;
+            const notActiveCount = filteredData.filter(d => d["CURRENT STATUS"] === "NOT ACTIVE").length;
+            chartStatusInstance.data.datasets[0].data = [activeCount, notActiveCount];
+            chartStatusInstance.update();
+
+            // Update Position Chart (4 kategori posisi)
+            const posLabels = ['NEW HIRE', 'AE OJT', 'AE PRO', 'AE ELITE'];
+            const posCounts = posLabels.map(label => filteredData.filter(d => d["POSITION ACTIVE"] === label).length);
+            chartPositionInstance.data.datasets[0].data = posCounts;
+            chartPositionInstance.update();
+
+            // Update City Chart
+            const cityMap = {};
+            filteredData.forEach(d => {
+                const c = d.CITY || 'UNKNOWN';
+                cityMap[c] = (cityMap[c] || 0) + 1;
+            });
+            chartCityInstance.data.labels = Object.keys(cityMap);
+            chartCityInstance.data.datasets[0].data = Object.values(cityMap);
+            chartCityInstance.update();
+        }
+
+        // CRUD OPERATIONS
+        function openAddModal() {
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('modalFormTitle').innerHTML = `<i class="fa-solid fa-user-plus text-indigo-600"></i> Tambah Sales Personel`;
+            document.getElementById('salesForm').reset();
+            document.getElementById('salesModal').classList.remove('hidden');
+        }
+
+        function openEditModal(index) {
+            const item = salesDatabase[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> Edit Sales Personel`;
+
+            document.getElementById('inputSalesCode').value = item.SALES_CODE || '';
+            document.getElementById('inputSalesName').value = item.SALES_NAME || '';
+            document.getElementById('inputSpvName').value = item.SPV_NAME || '';
+            document.getElementById('inputTsName').value = item.TS_NAME || '';
+            document.getElementById('inputHosName').value = item.HOS_NAME || '';
+            document.getElementById('inputMob').value = item.MOB || '';
+            document.getElementById('inputTenure').value = item.TENURE || '';
+            document.getElementById('inputCurrentStatus').value = item["CURRENT STATUS"] || 'ACTIVE';
+            document.getElementById('inputCity').value = item.CITY || '';
+            document.getElementById('inputRegion').value = item.REGION || 'JAWA BARAT';
+            document.getElementById('inputPositionActive').value = item["POSITION ACTIVE"] || 'NEW HIRE';
+            document.getElementById('inputFootprint').value = item.FOOTPRINT || '';
+
+            document.getElementById('salesModal').classList.remove('hidden');
+        }
+
+        function closeSalesModal() {
+            document.getElementById('salesModal').classList.add('hidden');
+        }
+
+        function saveSalesRecord(e) {
+            e.preventDefault();
+            const idx = parseInt(document.getElementById('editIndex').value);
+
+            const record = {
+                SALES_CODE: document.getElementById('inputSalesCode').value.trim(),
+                SALES_NAME: document.getElementById('inputSalesName').value.trim(),
+                SPV_NAME: document.getElementById('inputSpvName').value.trim(),
+                TS_NAME: document.getElementById('inputTsName').value.trim(),
+                HOS_NAME: document.getElementById('inputHosName').value.trim(),
+                MOB: document.getElementById('inputMob').value.trim(),
+                TENURE: document.getElementById('inputTenure').value.trim(),
+                "CURRENT STATUS": document.getElementById('inputCurrentStatus').value,
+                CITY: document.getElementById('inputCity').value.trim().toUpperCase(),
+                REGION: document.getElementById('inputRegion').value.trim().toUpperCase(),
+                "POSITION ACTIVE": document.getElementById('inputPositionActive').value,
+                FOOTPRINT: document.getElementById('inputFootprint').value.trim()
+            };
+
+            if (idx >= 0) {
+                salesDatabase[idx] = record;
+                addLog(`Memperbarui sales: ${record.SALES_NAME} (${record.SALES_CODE})`);
+            } else {
+                salesDatabase.unshift(record);
+                addLog(`Menambahkan sales baru: ${record.SALES_NAME} (${record.SALES_CODE})`);
+            }
+
+            closeSalesModal();
+            populateFilterDropdowns();
+            applyFilters();
+        }
+
+        function deleteRecord(index) {
+            const item = salesDatabase[index];
+            if (confirm(`Hapus data "${item.SALES_NAME}" (${item.SALES_CODE})?`)) {
+                salesDatabase.splice(index, 1);
+                addLog(`Menghapus sales: ${item.SALES_NAME} (${item.SALES_CODE})`);
+                populateFilterDropdowns();
+                applyFilters();
+            }
+        }
+
+        // EXCEL UPLOAD DISEMPURNAKAN
+        function openUploadModal() {
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('uploadProgress').classList.add('hidden');
+            document.getElementById('uploadBar').style.width = '0%';
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+        }
+
+        function processExcelFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('uploadBar');
+            const percentText = document.getElementById('uploadPercent');
+            const statusText = document.getElementById('uploadStatusText');
+
+            progressContainer.classList.remove('hidden');
+            statusText.textContent = "Membaca berkas Excel...";
+            progressBar.style.width = "30%";
+            percentText.textContent = "30%";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    statusText.textContent = "Menyesuaikan struktur kolom otomatis...";
+                    progressBar.style.width = "70%";
+                    percentText.textContent = "70%";
+
+                    setTimeout(() => {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                        if (jsonData.length === 0) {
+                            alert("File Excel kosong!");
+                            closeUploadModal();
+                            return;
+                        }
+
+                        const newRecords = jsonData.map(row => {
+                            const getVal = (possibleKeys) => {
+                                for (let key of Object.keys(row)) {
+                                    const cleanKey = key.trim().toUpperCase().replace(/[\s_]+/g, '');
+                                    for (let p of possibleKeys) {
+                                        if (cleanKey === p.toUpperCase().replace(/[\s_]+/g, '')) {
+                                            return row[key];
+                                        }
+                                    }
+                                }
+                                return "";
+                            };
+
+                            const salesCode = getVal(['SALES_CODE', 'SALESCODE', 'CODE']) || `SALES-${Math.floor(100+Math.random()*900)}`;
+                            const salesName = getVal(['SALES_NAME', 'SALESNAME', 'NAMA']) || "Tanpa Nama";
+                            const spvName = getVal(['SPV_NAME', 'SPVNAME', 'SPV']) || "Unassigned";
+                            const tsName = getVal(['TS_NAME', 'TSNAME', 'TS']) || "Unassigned";
+                            const hosName = getVal(['HOS_NAME', 'HOSNAME', 'HOS']) || "";
+                            const mob = getVal(['MOB']) || "";
+                            const tenure = getVal(['TENURE']) || "";
+                            
+                            let currStatus = (getVal(['CURRENT_STATUS', 'CURRENTSTATUS', 'STATUS']) || 'ACTIVE').toString().toUpperCase().trim();
+                            if (!['ACTIVE', 'NOT ACTIVE'].includes(currStatus)) {
+                                currStatus = currStatus.includes('NOT') || currStatus.includes('NON') ? 'NOT ACTIVE' : 'ACTIVE';
+                            }
+
+                            const city = (getVal(['CITY', 'KOTA']) || "BANDUNG").toString().toUpperCase().trim();
+                            const region = (getVal(['REGION', 'WILAYAH']) || "JAWA BARAT").toString().toUpperCase().trim();
+                            
+                            let posActive = (getVal(['POSITION_ACTIVE', 'POSITIONACTIVE', 'POSISI']) || 'NEW HIRE').toString().toUpperCase().trim();
+                            const validPositions = ['NEW HIRE', 'AE OJT', 'AE PRO', 'AE ELITE'];
+                            if (!validPositions.includes(posActive)) {
+                                posActive = 'NEW HIRE';
+                            }
+
+                            const footprint = getVal(['FOOTPRINT', 'AREA']) || "";
+
+                            return {
+                                SALES_CODE: String(salesCode),
+                                SALES_NAME: String(salesName),
+                                SPV_NAME: String(spvName),
+                                TS_NAME: String(tsName),
+                                HOS_NAME: String(hosName),
+                                MOB: String(mob),
+                                TENURE: String(tenure),
+                                "CURRENT STATUS": currStatus,
+                                CITY: city,
+                                REGION: region,
+                                "POSITION ACTIVE": posActive,
+                                FOOTPRINT: String(footprint)
+                            };
+                        });
+
+                        progressBar.style.width = "100%";
+                        percentText.textContent = "100%";
+                        statusText.textContent = `Selesai! ${newRecords.length} data diimpor.`;
+
+                        setTimeout(() => {
+                            salesDatabase = newRecords;
+                            populateFilterDropdowns();
+                            applyFilters();
+                            closeUploadModal();
+                            addLog(`Unggah Excel sukses: ${file.name} (${newRecords.length} data)`);
+                        }, 400);
+
+                    }, 300);
+
+                } catch (err) {
+                    alert("Gagal membaca Excel!");
+                    closeUploadModal();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportToExcel() {
+            const dataToExport = filteredData.map(item => ({
+                "SALES_CODE": item.SALES_CODE,
+                "SALES_NAME": item.SALES_NAME,
+                "SPV_NAME": item.SPV_NAME,
+                "TS_NAME": item.TS_NAME,
+                "HOS_NAME": item.HOS_NAME,
+                "MOB": item.MOB,
+                "TENURE": item.TENURE,
+                "CURRENT STATUS": item["CURRENT STATUS"],
+                "CITY": item.CITY,
+                "REGION": item.REGION,
+                "POSITION ACTIVE": item["POSITION ACTIVE"],
+                "FOOTPRINT": item.FOOTPRINT
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sales_Database");
+            XLSX.writeFile(workbook, `Sales_Database_Bandung_${new Date().toISOString().slice(0,10)}.xlsx`);
+            addLog("Mengekspor database ke Excel.");
+        }
+
+        function exportToPDF() {
+            const element = document.createElement('div');
+            element.className = 'p-4 bg-white text-slate-800 font-sans';
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">
+                    <h1 style="font-size: 16px; font-weight: bold; color: #1e1b4b; margin: 0;">Sales Database Management Bandung</h1>
+                    <p style="font-size: 10px; color: #64748b; margin: 2px 0 0 0;">Laporan Personel Sales — Jawa Barat</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: left;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9;">
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">Sales Code</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">Sales Name</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">SPV</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">TS</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">Status</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">City</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 4px;">Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredData.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item.SALES_CODE)}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;"><strong>${escapeHtml(item.SALES_NAME)}</strong></td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item.SPV_NAME)}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item.TS_NAME)}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item["CURRENT STATUS"])}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item.CITY)}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 4px;">${escapeHtml(item["POSITION ACTIVE"])}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: [8, 8, 8, 8],
+                filename: `Sales_Database_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+            addLog("Mengekspor database ke PDF.");
+        }
+		
+    </script>
+</body>
+</html>
+<!-- Load Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // Konfigurasi dari Project Firebase kamu
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://PROJECT_ID.firebaseio.com",
+    projectId: "PROJECT_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Fungsi menyimpan data agar aman & tidak hilang
+  function simpanData(namaUser) {
+    set(ref(db, 'users/' + Date.now()), {
+      username: namaUser
+    });
+  }
+</script>
